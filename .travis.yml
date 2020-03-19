@@ -21,6 +21,7 @@ script:
 
 env:
   global:
+    # Doctr deploy key for vstadnytskyi/laue-crystallography
     - secure: "yFl/HfprmpkLThZ1eZQJtCY2iTZiMd9R310FB7kYdZ6/bPpsyKOnjL8PWpWDf6fJi0YQnTzX4lN3TXTJfd1bHUqttuY23oIs3TAeBvTwuayFA8M0LvGtHVHzir1TG
     FeB7cMxboDzZeFy8SrNwt8nxituVp4toOKPsSpPgVbrvnhg9APemBTlkOJWAO2xYbj02QR9Oofpm768GNbok9HeCXCPjbdOE3+8f2GjGPZSz/WUZgF/a9wSaAFJPRb3qLgIcUnwIc/YumLTN
     GxQSKTpQkJftlbucNOul1wG3ecbjqjAnKFGOLv4iajsSDuyo3M4J6GVQ2klt2duWtTbzCAvk6oQp3FlHBFa3bqTTXjfcjAwjuVgdRiWReDmNCr5vG+CJOphXq0O0wQeIQvcPDi3LEIQjDumC

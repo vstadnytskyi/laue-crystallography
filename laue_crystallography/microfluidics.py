@@ -7,14 +7,13 @@ Python Version: 3
 
 Description:
 ------------
-The Template Server hosts three PVs: CMD(command PV), ACK(acknowledgement PV) and values PV.
-"""
 
+"""
 
 
 from numpy import array, zeros
 
-pixel_size = 1 #in microns
+pixel_size = 4.65 #in microns
 plane = zeros((1024,1024))
 
 def distance(x,y):
@@ -223,6 +222,126 @@ def get_test_images(i = 0):
     img = load_from_file(filename)
     return img
 
+def find_pixels_with_neighbors(input_mask, N = 2):
+    from numpy import zeros
+    mask = input_mask.copy()*0
+    for r in range(input_mask.shape[0]):
+        for c in range(input_mask.shape[1]):
+            if input_mask[r,c] == 1:
+                temp_mask = input_mask[r-N:r+N,c-N:c+N]
+                if temp_mask.sum() >= 4*N*N:
+                    mask[r,c] = 1
+    return mask
+
+def ellipse(h = 250, v = 250, x0 = 400, y0 = 400, size = (1024,1360), theta = 0):
+    """
+    returns array with 'size' with an ellipse centered at x0,y0 with diameters h(horizontal) and v(vertical) tilted at theta degrees. The h-horizontal and v-vertical is accurate only if theta is zero degrees.
+
+    Parameters
+    ----------
+    h : float
+        diameter of horizontal(zero degrees) axis of the ellipse
+    v : float
+        diameter of vertical(zero degrees) axis of the ellipse
+    x0 : float
+        x-coordinate of the center of the ellipse
+    y0 : float
+        y-coordinate of the center of the ellipse
+    size : tuple
+        size of the output image Default: 1024,1360
+    theta : float
+        angle of rotation in degrees. Default: 0
+
+    Returns
+    -------
+    mask : numpy array
+        numpy array with 'size'
+
+    Examples
+    --------
+    the example of usage. To draw an ellise center at (1115,659) with horizontal diameter of 52 pixels and vertical diameter of 56 pixels.
+
+    >>> e = draw_an_ellipsoid(h = 52, v = 56, x0 = 1115, y0 = 659
+    """
+    from astropy.modeling.functional_models import Ellipse2D
+    from astropy.coordinates import Angle
+    from numpy import mgrid
+    Ellipse = Ellipse2D
+    theta = Angle(theta, 'deg')
+    e = Ellipse2D(amplitude=1, x_0=x0, y_0=y0, a=h/2, b=v/2,
+              theta=theta.radian)
+    y, x = mgrid[0:size[0], 0:size[1]]
+    return e(x,y)
+
+def analyse_array(arr, threshold = 10, N = [2]):
+    """
+
+    """
+    from numpy import argwhere
+    #step 1 Create flatten mask of zeros
+    mask = arr*0 + 1
+    fl_mask = mask.flatten()
+    # find all indices with value below 10 (different number might be needed.
+    idx = argwhere(arr.flatten() <= threshold)
+    #mask those values
+    fl_mask[idx] = 0
+    # this will help to define thick counter lines
+    mask = []
+    mask.append([fl_mask.reshape(1024,1360),0])
+    for i in N:
+        mask.append([find_pixels_with_neighbors(mask[0][0],N = i),i])
+    return mask
+
+def plot_image_with_sum(img, title = ''):
+    """
+    plots an image with two graphs
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
+    # Plot figure with subplots of different sizes
+    fig = plt.figure()
+    # set up subplot grid
+    gridspec.GridSpec(4,4)
+
+    # large subplot
+    plt.subplot2grid((4,4), (0,0), colspan=3, rowspan=3)
+    #plt.locator_params(axis='x', nbins=5)
+    #plt.locator_params(axis='y', nbins=5)
+    # plt.title('Normal distribution')
+    # plt.xlabel('Data values')
+    # plt.ylabel('Frequency')
+    plt.imshow(img)
+
+    # small subplot 1
+    plt.subplot2grid((4,4), (0,3), colspan=1, rowspan=3)
+    #plt.locator_params(axis='x', nbins=5)
+    #plt.locator_params(axis='y', nbins=5)
+    # plt.title('t distribution')
+    # plt.xlabel('Data values')
+    # plt.ylabel('Frequency')
+    x = img.sum(axis = 1)
+    y = np.arange(0,len(x),1)
+    plt.plot(x,y)
+    plt.ylim(0,1024)
+    ax = plt.gca()
+    ax.set_ylim(ax.get_ylim()[::-1])
+
+    # small subplot 2
+    plt.subplot2grid((4,4), (3,0), colspan=3, rowspan=1)
+    #plt.locator_params(axis='x', nbins=5)
+    #plt.locator_params(axis='y', nbins=5)
+    # plt.title('F distribution')
+    # plt.xlabel('Data values')
+    # plt.ylabel('Frequency')
+    plt.plot(img.sum(axis = 0))
+    plt.xlim(0,1360)
+    # fit subplots and save fig
+    fig.tight_layout()
+    #fig.set_size_inches(w=11,h=7)
+    fig_name = 'plot.png'
+    plt.show()
+
 if __name__ == '__main__':
     # The Record Name is specified by prefix
     prefix = 'microfludics'
@@ -233,3 +352,15 @@ if __name__ == '__main__':
                         level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
 
     from tempfile import gettempdir
+
+    #For testing
+    from numpy import arange
+    from matplotlib import pyplot as plt
+    from ubcs_auxiliary.save_load_object import load_from_file
+    root = '/Users/femto-13/microfluidics_data/puck5/'
+    bckg = load_from_file(root + 'bck_1.imgpkl')
+    img1 = load_from_file(root + 'image_1.imgpkl')
+    data = -1*(img1.astype('float64').T-bckg.astype('float64').T)
+    mask,mask_2 = analyse_array(data[:,:,0]+data[:,:,1]+data[:,:,2], threshold = 30)
+    plot_image_with_sum(mask)
+    plot_image_with_sum(mask_2)

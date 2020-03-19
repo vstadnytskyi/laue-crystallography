@@ -11,5 +11,6 @@ Laue crystallography Documentation
 
    installation
    usage
+   microfluidics
    release-history
    min_versions

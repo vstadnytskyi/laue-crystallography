@@ -358,9 +358,12 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from ubcs_auxiliary.save_load_object import load_from_file
     root = '/Users/femto-13/microfluidics_data/puck5/'
-    bckg = load_from_file(root + 'bck_1.imgpkl')
-    img1 = load_from_file(root + 'image_1.imgpkl')
-    data = -1*(img1.astype('float64').T-bckg.astype('float64').T)
-    mask,mask_2 = analyse_array(data[:,:,0]+data[:,:,1]+data[:,:,2], threshold = 30)
-    plot_image_with_sum(mask)
-    plot_image_with_sum(mask_2)
+    bckg = load_from_file(root + 'bck_19.imgpkl').astype('float64')
+    for i in range(19):
+        bckg += load_from_file(root + f'bck_{i}.imgpkl').astype('float64')
+    bckg = bckg.T/20.0
+    img1 = load_from_file(root + 'image_15.imgpkl').astype('float64').T
+    data = -1*(img1-bckg)
+    mask = analyse_array(data[:,:,0]+data[:,:,1]+data[:,:,2], threshold = 10, N = [1,2,3])
+    plot_image_with_sum(mask[0][0].astype('int16'))
+    plot_image_with_sum(mask[3][0])
